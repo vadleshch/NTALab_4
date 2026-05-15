@@ -4,10 +4,23 @@ using System.Diagnostics;
 uint swaps = 0;
 Random r = new Random();
 Matrix[] Matrixs = new Matrix[50];
+StreamWriter mw = new StreamWriter("Матриці.txt");
+
 for (int i = 0; i < 50; i++)
 {
     Matrixs[i] = GenMatrix();
+    for (int j = 0; j < Matrixs[i].M.GetLength(0); j++)
+    {
+        for (int j2 = 0; j2 < Matrixs[i].M.GetLength(1); j2++)
+        {
+            mw.Write(Matrixs[i].M[j, j2] + " ");
+        }
+        mw.WriteLine();
+    }
+    mw.WriteLine();
+    mw.WriteLine();
 }
+mw.Close();
 
 Matrix[] Copy(Matrix[] A)
 {
@@ -31,41 +44,38 @@ void Test(double d, StreamWriter datawriter)
     double sumT = 0;
     double sumL = 0;
     double sumK = 0;
+    double sumswaps = 0;
+    int swps = 0;
     double l = 0;
     double k = 0;
     Matrix[] B = Copy(Matrixs);
     for (int i = 0; i < 50; i++)
     {
-        for (int j = 0; j < B[i].M.GetLength(0); j++)
-        {
-            for (int j2 = 0; j2 < B[i].M.GetLength(1); j2++)
-            {
-                datawriter.Write(B[i].M[j, j2] + " ");
-            }
-            datawriter.WriteLine();
-        }
         sw.Restart();
-        B[i] = LLL(B[i], d);
+        (B[i], swps) = LLL(B[i], d);
         sw.Stop();
         l = Length(B[i]);
         k = CoefAdamara(B[i]);
-        datawriter.WriteLine(sw.Elapsed.Milliseconds + " " + l + " " + k + " " + swaps + " " + d);
-        sumT += sw.Elapsed.Milliseconds;
+        datawriter.WriteLine(d + ": " + sw.Elapsed.TotalMilliseconds + " " + l + " " + k + " " + swps);
+        sumT += sw.Elapsed.TotalMilliseconds;
         sumL += l;
         sumK += k;
+        sumswaps += swps;
         Console.Write("|");
     }
     Console.WriteLine();
-    Console.WriteLine(d + ": " + sumT / 50 + " " + sumL / 50 + " " + sumK / 50 + " " + swaps / 50);
+    Console.WriteLine(d + ": " + sumT / 50 + " " + sumL / 50 + " " + sumK / 50 + " " + sumswaps / 50);
+    datawriter.Close();
 }
 
 Parallel.Invoke(
-    () => Test(0.50, new StreamWriter("data1.txt")),
-    () => Test(0.75, new StreamWriter("data2.txt")),
-    () => Test(0.90, new StreamWriter("data3.txt")),
-    () => Test(0.95, new StreamWriter("data4.txt")),
-    () => Test(0.99, new StreamWriter("data5.txt"))
+    () => Test(0.50, new StreamWriter("Коеф1.txt")),
+    () => Test(0.75, new StreamWriter("Коеф2.txt")),
+    () => Test(0.90, new StreamWriter("Коеф3.txt")),
+    () => Test(0.95, new StreamWriter("Коеф4.txt")),
+    () => Test(0.99, new StreamWriter("Коеф5.txt"))
 );
+
 
 
 double Length(Matrix B)
@@ -94,7 +104,7 @@ double det(Matrix B)
     Matrix U;
     Matrix P;
     (L, U, P) = Matrix.decomposition(B);
-    double det = 1;
+    double det = 0;
     for (int i = 0; i < U.M.GetLength(0); i++)
     {
         det = det + Math.Log(Math.Abs(U.M[i, i]));
@@ -102,8 +112,9 @@ double det(Matrix B)
     return det;
 }
 
-Matrix LLL(Matrix B, double d)
+(Matrix, int) LLL(Matrix B, double d)
 {
+    int counter = 0;
     Matrix res = B;
     int m = res.M.GetLength(1);
     int k = 1;
@@ -127,6 +138,7 @@ Matrix LLL(Matrix B, double d)
         if (norms[k] < (d - mu[k, k - 1] * mu[k, k - 1]) * norms[k - 1])
         {
             Swap(res, k - 1, k);
+            counter++;
             (Bstar, mu, norms) = GrammaShmidta(res);
             k = Math.Max(k - 1, 1);
         }   
@@ -135,7 +147,7 @@ Matrix LLL(Matrix B, double d)
             k++;
         }
     }
-    return res;
+    return (res, counter);
 }
 (Matrix, double[,], double[]) GrammaShmidta(Matrix B)
 {
@@ -193,11 +205,11 @@ Matrix GenMatrix(int n = 30)
         res.M[i, i] = 1;
     }
     int x, y, c;
-    for (int i = 0; i < 160; i++)
+    for (int i = 0; i < 660; i++)
     {
         x = r.Next(0, n);
         y = r.Next(0, n);
-        c = r.Next(-10, 10);
+        c = r.Next(-2, 3);
         if (x != y && c != 0)
         { 
             for (int j = 0; j < n; j++)
@@ -206,11 +218,11 @@ Matrix GenMatrix(int n = 30)
             }
         }
     }
-    for (int i = 0; i < 160; i++)
+    for (int i = 0; i < 660; i++)
     {
         x = r.Next(0, n);
         y = r.Next(0, n);
-        c = r.Next(-10, 10);
+        c = r.Next(-2, 3);
         if (x != y && c != 0)
         {
             for (int j = 0; j < n; j++)
